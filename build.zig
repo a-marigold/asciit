@@ -18,6 +18,7 @@ pub fn build(b: *std.Build) void {
             .strip = true,
             .unwind_tables = .none,
             .stack_protector = false,
+            .link_libc = false,
         }),
     });
 
