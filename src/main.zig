@@ -23,6 +23,7 @@ const ASCII_CHARS = [_][]const u8{ "NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "AC
 
 //     const BOT_LEFT = "└";
 //     const BOT_MID = "┴";
+
 //     const BOT_RIGHT = "┘";
 // };
 
@@ -68,7 +69,7 @@ const ASCII_TABLE_TEXT = block: {
 
     const colPadding = repeat(1, " ");
 
-    const colHeaders = .{ "Char", "DEC", "BIN     ", "HEX" };
+    const colHeaders = .{ "Char", "HEX", "BIN     ", "DEC" };
 
     const head = headBlock: {
         var headTop: []const u8 = "";
@@ -135,9 +136,9 @@ const ASCII_TABLE_TEXT = block: {
 
             const colValues: [colHeaders.len][]const u8 = .{
                 char,
-                formatNum(.Dec, charCodePoint),
-                padStart(8, formatNum(.Bin, charCodePoint), '0'),
                 formatNum(.Hex, charCodePoint),
+                padStart(8, formatNum(.Bin, charCodePoint), '0'),
+                formatNum(.Dec, charCodePoint),
             };
 
             for (colHeaders, colValues, 0..) |header, value, index| {
