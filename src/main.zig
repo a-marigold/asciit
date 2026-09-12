@@ -1,5 +1,6 @@
 const std = @import("std");
 const mem = std.mem;
+const math = std.math;
 const Io = std.Io;
 const File = Io.File;
 const process = std.process;
@@ -8,15 +9,49 @@ const fmt = std.fmt;
 /// Sorted in order of code points.
 const ASCII_CHARS = [_][]const u8{ "NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS", "HT", "LF", "VT", "FF", "CR", "SO", "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM", "SUB", "ESC", "FS", "GS", "RS", "US", "SP", "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";", "<", "=", ">", "?", "@", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[", "\\", "]", "^", "_", "'", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "{", "|", "}", "~", "DEL" };
 
+// const BORDERS = struct {
+//     const HOR_LINE = "─";
+//     const VERT_LINE = "│";
+
+//     const TOP_LEFT = "┌";
+//     const TOP_MID = "┬";
+//     const TOP_RIGHT = "┐";
+
+//     const MID_LEFT = "├";
+//     const MID_MID = "┼";
+//     const MID_RIGHT = "┤";
+
+//     const BOT_LEFT = "└";
+//     const BOT_MID = "┴";
+//     const BOT_RIGHT = "┘";
+// };
+
+const BORDERS = struct {
+    const HOR_LINE = "-";
+    const VERT_LINE = "|";
+
+    const TOP_LEFT = "+";
+    const TOP_MID = "+";
+    const TOP_RIGHT = "+";
+
+    const MID_LEFT = "+";
+    const MID_MID = "+";
+    const MID_RIGHT = "+";
+
+    const BOT_LEFT = "+";
+    const BOT_MID = "+";
+    const BOT_RIGHT = "+";
+};
+
 const ASCII_TABLE_TEXT = block: {
-    @setEvalBranchQuota(10000000);
+    @setEvalBranchQuota(math.maxInt(u32));
 
     const partsLen = 4;
 
     const partLen = ASCII_CHARS.len / partsLen;
 
     const parts = partsBlock: {
-        var parts: [partsLen][]const []const u8 = undefined;
+        var parts: [partsLen]*const [partLen][]const u8 = undefined;
 
         var remaining: []const []const u8 = ASCII_CHARS[0..];
         for (&parts) |*part| {
@@ -41,25 +76,25 @@ const ASCII_TABLE_TEXT = block: {
         var headBot: []const u8 = "";
 
         for (0..parts.len) |partIndex| {
-            const isLastPart = partIndex == parts.len - 1;
+            const isLastPart = partIndex == partsLen - 1;
 
-            headTop = headTop ++ "┌";
-            headContent = headContent ++ "│";
-            headBot = headBot ++ "├";
+            headTop = headTop ++ BORDERS.TOP_LEFT;
+            headContent = headContent ++ BORDERS.VERT_LINE;
+            headBot = headBot ++ BORDERS.MID_LEFT;
 
             for (colHeaders, 0..) |colText, colIndex| {
                 const isLastCol = colIndex == colHeaders.len - 1;
 
-                headTop = headTop ++ repeat(colText.len + colPadding.len * 2, "─");
-                headContent = headContent ++ colPadding ++ colText ++ colPadding ++ "│";
-                headBot = headBot ++ repeat(colText.len + colPadding.len * 2, "─");
+                headTop = headTop ++ repeat(colText.len + colPadding.len * 2, BORDERS.HOR_LINE);
+                headContent = headContent ++ colPadding ++ colText ++ colPadding ++ BORDERS.VERT_LINE;
+                headBot = headBot ++ repeat(colText.len + colPadding.len * 2, BORDERS.HOR_LINE);
 
                 if (isLastCol) {
-                    headTop = headTop ++ "┐";
-                    headBot = headBot ++ "┤";
+                    headTop = headTop ++ BORDERS.TOP_RIGHT;
+                    headBot = headBot ++ BORDERS.MID_RIGHT;
                 } else {
-                    headTop = headTop ++ "┬";
-                    headBot = headBot ++ "┼";
+                    headTop = headTop ++ BORDERS.TOP_MID;
+                    headBot = headBot ++ BORDERS.MID_MID;
                 }
             }
 
@@ -95,10 +130,8 @@ const ASCII_TABLE_TEXT = block: {
             const charCodePoint = partCharsStart + charPartIndex;
             const char = ASCII_CHARS[charCodePoint];
 
-            rowContent = rowContent ++ "│";
-            rowBot = rowBot ++ if (isLastRow) "└" else "├";
-
-            const rowBotBorderCorner = if (isLastRow) "┴" else "┼";
+            rowContent = rowContent ++ BORDERS.VERT_LINE;
+            rowBot = rowBot ++ if (isLastRow) BORDERS.BOT_LEFT else BORDERS.MID_LEFT;
 
             const colValues: [colHeaders.len][]const u8 = .{
                 char,
@@ -110,17 +143,29 @@ const ASCII_TABLE_TEXT = block: {
             for (colHeaders, colValues, 0..) |header, value, index| {
                 const isLastCol = index == colHeaders.len - 1;
 
-                const colBotBorderCorner = if (isLastCol) "┘" else rowBotBorderCorner;
+                const colBotRightBorder =
+                    if (isLastCol and isLastRow)
+                        BORDERS.BOT_RIGHT
+                    else if (isLastCol)
+                        BORDERS.MID_RIGHT
+                    else if (isLastRow)
+                        BORDERS.BOT_MID
+                    else
+                        BORDERS.MID_MID;
 
-                rowContent = rowContent ++ colPadding ++ padEnd(header.len, value, ' ') ++ " │";
-                rowBot = rowBot ++ repeat(header.len + colPadding.len * 2, "─") ++ colBotBorderCorner;
+                rowContent = rowContent ++ colPadding ++ padEnd(
+                    header.len,
+                    value,
+                    ' ',
+                ) ++ colPadding ++ BORDERS.VERT_LINE;
+                rowBot = rowBot ++ repeat(header.len + colPadding.len * 2, BORDERS.HOR_LINE) ++ colBotRightBorder;
             }
 
-            const partsGapStr =
+            const partGap =
                 if (isLastPart) "\n" else partsRightGap;
 
-            rowContent = rowContent ++ partsGapStr;
-            rowBot = rowBot ++ partsGapStr;
+            rowContent = rowContent ++ partGap;
+            rowBot = rowBot ++ partGap;
         }
 
         text = text ++ rowContent ++ rowBot;
@@ -134,9 +179,10 @@ pub fn main() !void {
     var threaded: Io.Threaded = .init(undefined, .{});
     const io = threaded.io();
 
-    var stdout = File.stdout().writerStreaming(io, &.{});
-
-    const stdoutWriter = &stdout.interface;
+    const stdoutWriter = block: {
+        var stdout = File.stdout().writerStreaming(io, &.{});
+        break :block &stdout.interface;
+    };
 
     return writeUnbuffered(stdoutWriter, ASCII_TABLE_TEXT);
 }
@@ -166,6 +212,7 @@ fn formatNum(comptime notation: enum { Bin, Dec, Hex }, comptime num: comptime_i
             .Dec => "{d}",
             .Hex => "{x}",
         },
+
         .{num},
     );
 }
