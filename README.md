@@ -3,4 +3,4 @@
 
 # Usage
 
-<img align="center" src="assets/showcase.png" alt="'asciit' utility terminal showcase" style="max-width: 100%; height: auto">
+<img align="center" src="assets/showcase.png" alt="'asciit' utility terminal showcase" style="max-width: 100%; height: 700px">
