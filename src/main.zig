@@ -9,40 +9,40 @@ const fmt = std.fmt;
 /// Sorted in order of code points.
 const ASCII_CHARS = [_][]const u8{ "NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS", "HT", "LF", "VT", "FF", "CR", "SO", "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM", "SUB", "ESC", "FS", "GS", "RS", "US", "SP", "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";", "<", "=", ">", "?", "@", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[", "\\", "]", "^", "_", "'", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "{", "|", "}", "~", "DEL" };
 
-// const BORDERS = struct {
-//     const HOR_LINE = "─";
-//     const VERT_LINE = "│";
-
-//     const TOP_LEFT = "┌";
-//     const TOP_MID = "┬";
-//     const TOP_RIGHT = "┐";
-
-//     const MID_LEFT = "├";
-//     const MID_MID = "┼";
-//     const MID_RIGHT = "┤";
-
-//     const BOT_LEFT = "└";
-//     const BOT_MID = "┴";
-
-//     const BOT_RIGHT = "┘";
-// };
-
 const BORDERS = struct {
     const HOR_LINE = "-";
     const VERT_LINE = "|";
 
-    const TOP_LEFT = "+";
-    const TOP_MID = "+";
-    const TOP_RIGHT = "+";
+    const TOP_LEFT = "┌";
+    const TOP_MID = "┬";
+    const TOP_RIGHT = "┐";
 
-    const MID_LEFT = "+";
-    const MID_MID = "+";
-    const MID_RIGHT = "+";
+    const MID_LEFT = "├";
+    const MID_MID = "┼";
+    const MID_RIGHT = "┤";
 
-    const BOT_LEFT = "+";
-    const BOT_MID = "+";
-    const BOT_RIGHT = "+";
+    const BOT_LEFT = "└";
+    const BOT_MID = "┴";
+
+    const BOT_RIGHT = "┘";
 };
+
+// const BORDERS = struct {
+//     const HOR_LINE = "-";
+//     const VERT_LINE = "|";
+
+//     const TOP_LEFT = "+";
+//     const TOP_MID = "+";
+//     const TOP_RIGHT = "+";
+
+//     const MID_LEFT = "+";
+//     const MID_MID = "+";
+//     const MID_RIGHT = "+";
+
+//     const BOT_LEFT = "+";
+//     const BOT_MID = "+";
+//     const BOT_RIGHT = "+";
+// };
 
 const ASCII_TABLE_TEXT = block: {
     @setEvalBranchQuota(math.maxInt(u32));
@@ -113,7 +113,7 @@ const ASCII_TABLE_TEXT = block: {
         }
     };
 
-    text = text ++ head;
+    text = text ++ bold(head);
 
     var charsCount = 0;
 
@@ -141,7 +141,9 @@ const ASCII_TABLE_TEXT = block: {
                 formatNum(.Dec, charCodePoint),
             };
 
-            for (colHeaders, colValues, 0..) |header, value, index| {
+            const colColors: [colHeaders.len]u8 = .{ 255, 120, 126, 6 };
+
+            for (colHeaders, colValues, colColors, 0..) |header, value, color, index| {
                 const isLastCol = index == colHeaders.len - 1;
 
                 const colBotRightBorder =
@@ -154,11 +156,11 @@ const ASCII_TABLE_TEXT = block: {
                     else
                         BORDERS.MID_MID;
 
-                rowContent = rowContent ++ colPadding ++ padEnd(
+                rowContent = rowContent ++ colPadding ++ colorize(color, padEnd(
                     header.len,
                     value,
                     ' ',
-                ) ++ colPadding ++ BORDERS.VERT_LINE;
+                )) ++ colPadding ++ BORDERS.VERT_LINE;
                 rowBot = rowBot ++ repeat(header.len + colPadding.len * 2, BORDERS.HOR_LINE) ++ colBotRightBorder;
             }
 
@@ -216,4 +218,13 @@ fn formatNum(comptime notation: enum { Bin, Dec, Hex }, comptime num: comptime_i
 
         .{num},
     );
+}
+
+fn bold(comptime str: []const u8) []const u8 {
+    return "\x1b[1m" ++ str ++ "\x1b[0m";
+}
+
+/// Applies 256-bit color to str.
+fn colorize(color: u8, comptime str: []const u8) []const u8 {
+    return "\x1b[38;5;" ++ formatNum(.Dec, color) ++ "m" ++ str ++ "\x1b[0m";
 }
