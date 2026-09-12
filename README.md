@@ -1,0 +1,1 @@
+<img align="center" src="assets/showcase.png" alt="'asciit' utility terminal showcase">
