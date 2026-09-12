@@ -141,7 +141,7 @@ const ASCII_TABLE_TEXT = block: {
                 formatNum(.Dec, charCodePoint),
             };
 
-            const colColors: [colHeaders.len]u8 = .{ 255, 120, 126, 6 };
+            const colColors: [colHeaders.len]u8 = .{ 255, 120, 229, 6 };
 
             for (colHeaders, colValues, colColors, 0..) |header, value, color, index| {
                 const isLastCol = index == colHeaders.len - 1;
