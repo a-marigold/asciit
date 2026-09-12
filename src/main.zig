@@ -129,6 +129,22 @@ const ASCII_TABLE_TEXT = block: {
     break :block text;
 };
 
+pub fn main() !void {
+    // `undefined` as allocator is safe 'cause no `Io` function requiring allocator is used
+    var threaded: Io.Threaded = .init(undefined, .{});
+    const io = threaded.io();
+
+    var stdout = File.stdout().writerStreaming(io, &.{});
+
+    const stdoutWriter = &stdout.interface;
+
+    return writeUnbuffered(stdoutWriter, ASCII_TABLE_TEXT);
+}
+
+inline fn writeUnbuffered(writer: *Io.Writer, data: []const u8) !void {
+    _ = try writer.vtable.drain(writer, &.{data}, 1);
+}
+
 fn repeat(comptime count: usize, comptime str: []const u8) []const u8 {
     var result: []const u8 = str;
     for (1..count) |_| result = result ++ str;
